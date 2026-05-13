@@ -176,7 +176,7 @@
 <body>
 <div class="container">
   <h1>🚪 三门问题</h1>
-  <p class="subtitle">蒙提霍尔问题 · 三扇门后：两只山羊🐐 + 一辆汽车🚗</p>
+  <p class="subtitle">换门胜率是坚持的 2 倍 🤯 亲自试一下就信了</p>
 
   <div class="sound-toggle">
     <label><input type="checkbox" id="voiceToggle" checked> 🔊 语音引导 &amp; 音效</label>
@@ -188,12 +188,12 @@
       <div class="value total" id="v-round">0</div>
     </div>
     <div class="stat-card">
-      <div class="label">🏠 坚持 · 胜率</div>
+      <div class="label">🏠 坚持不换 · 胜率</div>
       <div class="value stick" id="v-stick-pct">0%</div>
       <div class="sub" id="v-stick-detail">0 / 0</div>
     </div>
     <div class="stat-card">
-      <div class="label">🔄 换门 · 胜率</div>
+      <div class="label">🔄 换一扇 · 胜率</div>
       <div class="value switch" id="v-switch-pct">0%</div>
       <div class="sub" id="v-switch-detail">0 / 0</div>
     </div>
@@ -226,8 +226,8 @@
   <div class="controls" id="controls">
     <div class="message" id="message">👆 点击一扇门来选择它</div>
     <div class="btn-group" id="actions">
-      <button class="btn btn-stick" id="btn-stick" disabled>🏠 坚持不换</button>
-      <button class="btn btn-switch" id="btn-switch" disabled>🔄 换另一扇门</button>
+      <button class="btn btn-stick" id="btn-stick" disabled>🏠 坚持</button>
+      <button class="btn btn-switch" id="btn-switch" disabled>🔄 换门</button>
       <button class="btn btn-next" id="btn-next" style="display:none">下一局</button>
     </div>
     <button class="btn btn-auto" id="btn-auto">▶ 自动模拟</button>
@@ -255,7 +255,7 @@
 <div class="modal-overlay" id="summaryModal">
   <div class="modal">
     <div class="badge" id="summaryBadge">📊 第 20 局小结</div>
-    <h2>📊 阶段性概率报告</h2>
+    <h2>📊 数据说话</h2>
     <div class="summary-stats">
       <div class="summary-stat">
         <span class="val stick" id="smodal-stick">0%</span>
@@ -277,9 +277,21 @@
 <script>
 // ---- Sound System ----
 let audioCtx = null;
+let activeNodes = [];
+
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx || audioCtx.state === 'closed') {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
+}
+
+function trackNode(...nodes) {
+  activeNodes.push(...nodes);
+  if (activeNodes.length > 100) {
+    activeNodes = activeNodes.filter(n => n.playbackState !== 'finished' && n.playbackState !== 4);
+  }
 }
 
 function soundOn() {
@@ -294,11 +306,13 @@ function playTone(freq, duration, type, vol) {
     const gain = ctx.createGain();
     osc.type = type || 'sine';
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol || 0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    const startTime = ctx.currentTime;
+    gain.gain.setValueAtTime(vol || 0.15, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
     osc.connect(gain).connect(ctx.destination);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+    trackNode(osc, gain);
   } catch(e) {}
 }
 
@@ -306,34 +320,44 @@ function playDoorReveal() {
   if (!soundOn()) return;
   try {
     const ctx = getAudioCtx();
-    const bufSize = ctx.sampleRate * 0.4;
+    const bufSize = ctx.sampleRate * 0.5;
     const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
     const data = buf.getChannelData(0);
     for (let i = 0; i < bufSize; i++) {
       const t = i / ctx.sampleRate;
-      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t / 0.4, 3) * 0.3;
-      data[i] += Math.sin(2 * Math.PI * (80 + t * 200) * t) * 0.08 * (1 - t / 0.4);
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t / 0.5, 2) * 0.25;
+      data[i] += Math.sin(2 * Math.PI * (60 + t * 180) * t) * 0.1 * (1 - t / 0.5);
     }
     const src = ctx.createBufferSource();
     src.buffer = buf;
     const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    const t = ctx.currentTime;
+    gain.gain.setValueAtTime(0.25, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
     src.connect(gain).connect(ctx.destination);
-    src.start(ctx.currentTime);
+    src.start(t);
+    trackNode(src, gain);
   } catch(e) {}
 }
 
 function playWinJingle() {
   if (!soundOn()) return;
-  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
-    setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 120);
+  const melody = [523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51];
+  melody.forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.15 + i * 0.02, 'sine', 0.1 + i * 0.01), i * 100);
   });
+  setTimeout(() => {
+    [523.25, 659.25, 783.99].forEach((f, i) => {
+      playTone(f, 0.4, 'triangle', 0.08);
+    });
+  }, 900);
 }
 
 function playLoseSound() {
-  playTone(200, 0.4, 'sawtooth', 0.08);
-  setTimeout(() => playTone(160, 0.5, 'sawtooth', 0.06), 150);
+  if (!soundOn()) return;
+  const descend = [350, 300, 250, 200, 160];
+  descend.forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.18, 'sawtooth', 0.07 - i * 0.01), i * 120);
+  });
 }
 
 function playSummaryChime() {
@@ -344,33 +368,41 @@ function playSummaryChime() {
 }
 
 // ---- Voice System ----
-let voiceReady = false;
 let zhVoice = null;
+let voiceSafety = null;
 
 function initVoice() {
   if (typeof speechSynthesis === 'undefined') return;
-  const tryVoice = () => {
+  const pick = () => {
     const voices = speechSynthesis.getVoices();
-    zhVoice = voices.find(v => v.lang.startsWith('zh')) || voices.find(v => v.lang.startsWith('cmn'));
-    voiceReady = true;
+    if (!voices.length) return;
+    zhVoice = voices.find(v => /Mei.?Jia|Ting.?Ting|Sin.?Ji/.test(v.name))
+      || voices.find(v => v.lang.startsWith('zh'))
+      || voices.find(v => v.lang.startsWith('cmn'));
   };
-  tryVoice();
-  speechSynthesis.onvoiceschanged = tryVoice;
+  pick();
+  speechSynthesis.onvoiceschanged = pick;
 }
 
 function speak(text) {
-  if (!soundOn() || !voiceReady || typeof speechSynthesis === 'undefined') return;
+  if (!soundOn() || typeof speechSynthesis === 'undefined') return;
+  if (voiceSafety) clearTimeout(voiceSafety);
   speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = 'zh-CN';
-  utter.rate = 1.0;
-  utter.pitch = 1.0;
+  utter.rate = 0.85;
+  utter.pitch = 1.1;
   if (zhVoice) utter.voice = zhVoice;
-  speechSynthesis.speak(utter);
+  // Safety: reset after 10s in case onend/onerror never fire
+  voiceSafety = setTimeout(() => { voiceSafety = null; }, 10000);
+  utter.onend = () => { if (voiceSafety) { clearTimeout(voiceSafety); voiceSafety = null; } };
+  utter.onerror = () => { if (voiceSafety) { clearTimeout(voiceSafety); voiceSafety = null; } };
+  try { speechSynthesis.speak(utter); } catch(e) {}
 }
 
 function stopSpeech() {
   if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+  if (voiceSafety) { clearTimeout(voiceSafety); voiceSafety = null; }
 }
 
 // ---- Game State ----
@@ -452,22 +484,23 @@ function showSummary() {
 
   const spTheo = Math.round(state.stickTotal * 100 / 3) / 100;
   const swTheo = Math.round(state.switchTotal * 200 / 3) / 100;
-  smGap.innerHTML = `坚持换门胜率差距：<strong>${gap}%</strong>`;
+  smGap.innerHTML = `换门 vs 坚持 胜率差：<strong>${gap}%</strong>`;
 
   let conclusion = '';
   let voiceText = '';
+  const ratio = sw > 0 && sp > 0 ? (sw / sp).toFixed(1) : '?';
   if (state.total >= 40) {
     const expectedGap = Math.round(100 / 3);
     if (gap >= expectedGap - 10) {
-      conclusion = `换门策略胜率约为坚持的 <strong>2 倍</strong>，与数学预期高度吻合！三门问题的核心在于：主持人排除了一扇错误门后，换门相当于获得了两次机会。`;
-      voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。换门策略胜率约为坚持的两倍，与数学预期高度吻合！三门问题的核心在于，主持人排除了一扇错误门后，换门相当于获得了两次机会。`;
+      conclusion = `直觉告诉你"换不换都一样"，但数据不会说谎 🤯<br>换门胜率 (<strong>${sw}%</strong>) 是坚持 (<strong>${sp}%</strong>) 的 <strong>${ratio} 倍</strong>！<br>主持人排除一扇空门后，换门相当于获得了两次机会。`;
+      voiceText = `换门胜率${sw}%，坚持${sp}%，差${ratio}倍。`;
     } else {
-      conclusion = `坚持胜率 <strong>${sp}%</strong>，换门胜率 <strong>${sw}%</strong>，换门优势已开始显现。继续增加试验次数，换门胜率将趋近于 <strong>66.7%</strong>。`;
-      voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。换门优势已开始显现。继续增加试验次数，换门胜率将趋近于百分之六十六点七。`;
+      conclusion = `坚持胜率 <strong>${sp}%</strong>，换门胜率 <strong>${sw}%</strong>，换门优势已开始显现。继续增加试验次数，换门胜率将趋近于 <strong>66.7%</strong>，是坚持的 2 倍。`;
+      voiceText = `换门胜率${sw}%，坚持胜率${sp}%，换门优势已显现。`;
     }
   } else {
-    conclusion = `目前坚持胜率 <strong>${sp}%</strong>，换门胜率 <strong>${sw}%</strong>。随着试验次数增加，换门的优势会越来越明显，理论上限为 <strong>66.7%</strong>，而坚持只有 <strong>33.3%</strong>。`;
-    voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。随着试验次数增加，换门的优势会越来越明显，理论上限为百分之六十六点七，而坚持只有百分之三十三点三。`;
+    conclusion = `直觉告诉你"换不换都一样"，但数学不是这么说的 🤯<br>目前坚持 <strong>${sp}%</strong>，换门 <strong>${sw}%</strong>。<br>随着次数增加，换门会趋近 <strong>66.7%</strong>，而坚持只有 <strong>33.3%</strong> —— 正好差 2 倍。`;
+    voiceText = `换门胜率${sw}%，坚持胜率${sp}%。换门最终趋近百分之六十六，坚持只有三十三。`;
   }
 
   smConclusion.innerHTML = conclusion;
@@ -484,12 +517,13 @@ function initRound() {
   state.reveal = -1;
   state.remaining = -1;
   state.phase = 'choose';
-  msg.innerHTML = '🚗 一辆汽车 + 🐐🐐 两只山羊<br>👆 点击一扇门来选择它';
+  msg.innerHTML = '🚪 三扇门，一辆汽车🚗，两只山羊🐐<br>选一扇，主持人会打开一扇空门<br>👆 点击选择';
   btnStick.disabled = true;
   btnSwitch.disabled = true;
   btnNext.style.display = 'none';
   doors.forEach(d => d.classList.remove('disabled'));
-  speak('三扇门后，有两只山羊和一辆汽车。请选择一扇门。');
+  if (state.total === 0) speak('欢迎来到三门问题。三扇门中有一辆汽车和两只山羊。请选择一扇门。');
+  else speak('请选择一扇门。');
 }
 
 function doorClick(index) {
@@ -502,8 +536,10 @@ function doorClick(index) {
   state.reveal = goatDoors[Math.floor(Math.random() * goatDoors.length)];
   state.remaining = [0,1,2].find(i => i !== state.pick && i !== state.reveal);
 
-  // play door reveal sound
-  playDoorReveal();
+  speak(`你选择了${state.pick + 1}号门。主持人正在开门。`);
+
+  // play door reveal sound after a short delay
+  setTimeout(() => playDoorReveal(), 300);
 
   doors[state.reveal].classList.add('revealed', 'open', 'disabled');
   const goatEmoji = '🐐';
@@ -512,12 +548,12 @@ function doorClick(index) {
   doors.forEach(d => d.classList.add('disabled'));
   doors[state.pick].classList.remove('disabled');
 
-  msg.innerHTML = `主持人打开了 <strong>${state.reveal + 1}</strong> 号门，后面是${goatEmoji}。<br>你要 <span class="highlight stick">坚持</span> 还是 <span class="highlight switch">换到 ${state.remaining + 1} 号门</span>？`;
+  msg.innerHTML = `主持人打开 <strong>${state.reveal + 1}</strong> 号门，空的🐐<br>你要 <span class="highlight stick">坚持</span> 还是 <span class="highlight switch">换到 ${state.remaining + 1} 号门</span>？`;
   btnStick.disabled = false;
   btnSwitch.disabled = false;
   state.phase = 'reveal';
 
-  setTimeout(() => speak(`主持人打开了${state.reveal + 1}号门，后面是山羊。你要坚持还是换到${state.remaining + 1}号门？`), 700);
+  setTimeout(() => speak(`${state.reveal + 1}号是空的。要换到${state.remaining + 1}号吗？`), 1200);
 }
 
 function decide(stick) {
@@ -529,22 +565,27 @@ function decide(stick) {
   if (stick) { state.stickTotal++; if (won) state.stickWins++; }
   else { state.switchTotal++; if (won) state.switchWins++; }
 
-  // play final reveal sound
-  doors[state.car].classList.add('open', 'won');
-  doors[state.car].querySelector('.prize').textContent = '🚗';
+  speak(stick ? `坚持${state.pick + 1}号。揭晓答案！` : `换到${finalDoor + 1}号。揭晓答案！`);
 
-  if (!won) doors[finalDoor].classList.add('lost', 'open');
+  doors.forEach((d, i) => {
+    d.classList.add('open');
+    if (i === state.car) {
+      d.classList.add('won');
+      d.querySelector('.prize').textContent = '🚗';
+    } else {
+      d.classList.add('lost');
+      d.querySelector('.prize').textContent = '🐐';
+    }
+  });
 
   doors.forEach(d => d.classList.add('disabled'));
 
   const emoji = won ? '🎉' : '😢';
   const strategy = stick ? '坚持' : '换门';
-  msg.innerHTML = `${emoji} ${strategy}！${won ? '你赢得了 <strong>🚗 汽车</strong>！' : '🥲 是山羊...'}`;
+  msg.innerHTML = `${emoji} ${strategy}！${won ? '赢得 <strong>🚗 汽车</strong>！' : '是山羊🐐 换门就赢了...'}`;
 
-  if (won) playWinJingle();
-  else playLoseSound();
-
-  setTimeout(() => speak(won ? '恭喜你赢得了汽车！' : '很遗憾，是山羊。'), 400);
+  if (won) { playWinJingle(); setTimeout(() => speak('恭喜，汽车！'), 800); }
+  else { playLoseSound(); setTimeout(() => speak('山羊。'), 800); }
 
   btnStick.disabled = true;
   btnSwitch.disabled = true;
@@ -598,10 +639,12 @@ autoStart.addEventListener('click', () => {
   autoStop.disabled = true;
   autoCount.disabled = false;
   updateStats();
+  speak(`模拟完成，共${state.total}局。打开面板查看详情。`);
 });
 
 document.getElementById('btnCloseModal').addEventListener('click', () => {
   modalOverlay.classList.remove('show');
+  if (state.phase === 'result') speak('点击下一局继续挑战。');
 });
 
 document.getElementById('voiceToggle').addEventListener('change', () => {
