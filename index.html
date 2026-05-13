@@ -176,7 +176,7 @@
 <body>
 <div class="container">
   <h1>🚪 三门问题</h1>
-  <p class="subtitle">蒙提霍尔问题 · 直观感受概率的力量</p>
+  <p class="subtitle">蒙提霍尔问题 · 三扇门后：两只山羊🐐 + 一辆汽车🚗</p>
 
   <div class="sound-toggle">
     <label><input type="checkbox" id="voiceToggle" checked> 🔊 语音引导 &amp; 音效</label>
@@ -484,12 +484,12 @@ function initRound() {
   state.reveal = -1;
   state.remaining = -1;
   state.phase = 'choose';
-  msg.innerHTML = '👆 点击一扇门来选择它';
+  msg.innerHTML = '🚗 一辆汽车 + 🐐🐐 两只山羊<br>👆 点击一扇门来选择它';
   btnStick.disabled = true;
   btnSwitch.disabled = true;
   btnNext.style.display = 'none';
   doors.forEach(d => d.classList.remove('disabled'));
-  speak('请选择一扇门');
+  speak('三扇门后，有两只山羊和一辆汽车。请选择一扇门。');
 }
 
 function doorClick(index) {
@@ -506,7 +506,7 @@ function doorClick(index) {
   playDoorReveal();
 
   doors[state.reveal].classList.add('revealed', 'open', 'disabled');
-  const goatEmoji = Math.random() > 0.5 ? '🐐' : '🐑';
+  const goatEmoji = '🐐';
   doors[state.reveal].querySelector('.prize').textContent = goatEmoji;
 
   doors.forEach(d => d.classList.add('disabled'));
@@ -517,8 +517,7 @@ function doorClick(index) {
   btnSwitch.disabled = false;
   state.phase = 'reveal';
 
-  const goatWord = goatEmoji === '🐐' ? '山羊' : '绵羊';
-  setTimeout(() => speak(`主持人打开了${state.reveal + 1}号门，后面是${goatWord}。你要坚持还是换到${state.remaining + 1}号门？`), 700);
+  setTimeout(() => speak(`主持人打开了${state.reveal + 1}号门，后面是山羊。你要坚持还是换到${state.remaining + 1}号门？`), 700);
 }
 
 function decide(stick) {
