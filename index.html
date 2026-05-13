@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三门问题 · 蒙提霍尔问题</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f172a; color: #e2e8f0;
+    min-height: 100vh; display: flex; justify-content: center; align-items: center;
+  }
+  .container { max-width: 700px; width: 100%; padding: 24px; }
+  h1 { text-align: center; font-size: 28px; margin-bottom: 4px; }
+  .subtitle { text-align: center; color: #94a3b8; font-size: 14px; margin-bottom: 24px; }
+
+  .sound-toggle {
+    text-align: right; margin-bottom: 8px;
+  }
+  .sound-toggle label {
+    font-size: 12px; color: #64748b; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .sound-toggle input { accent-color: #8b5cf6; cursor: pointer; }
+
+  .stats {
+    display: flex; gap: 12px; margin-bottom: 24px;
+  }
+  .stat-card {
+    flex: 1; background: #1e293b; border-radius: 12px; padding: 16px;
+    text-align: center; border: 1px solid #334155;
+  }
+  .stat-card .label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; }
+  .stat-card .value.stick { color: #f59e0b; }
+  .stat-card .value.switch { color: #3b82f6; }
+  .stat-card .value.total { color: #10b981; }
+  .stat-card .sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+  .doors {
+    display: flex; gap: 16px; justify-content: center; margin-bottom: 24px;
+  }
+  .door {
+    width: 160px; height: 220px; perspective: 800px; cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .door:hover:not(.disabled) { transform: translateY(-4px); }
+  .door-inner {
+    width: 100%; height: 100%; position: relative; transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+  .door.open .door-inner { transform: rotateY(-180deg); }
+  .door-face {
+    position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+    border-radius: 12px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; font-size: 48px;
+    border: 3px solid transparent;
+  }
+  .door-front {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border-color: #475569; z-index: 2;
+  }
+  .door-front .door-knob {
+    width: 16px; height: 16px; background: #f59e0b; border-radius: 50%;
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    box-shadow: 0 0 8px rgba(245,158,11,0.4);
+  }
+  .door-front .door-number {
+    font-size: 22px; font-weight: 700; color: #94a3b8;
+    margin-bottom: 20px;
+  }
+  .door-back {
+    background: #1e293b; border-color: #475569;
+    transform: rotateY(180deg);
+  }
+  .door-back .prize { font-size: 64px; }
+  .selected .door-front { border-color: #f59e0b; box-shadow: 0 0 20px rgba(245,158,11,0.3); }
+  .revealed .door-front { border-color: #ef4444; opacity: 0.5; }
+  .won .door-back { border-color: #10b981; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+  .lost .door-back { border-color: #ef4444; }
+
+  .controls {
+    background: #1e293b; border-radius: 12px; padding: 20px;
+    border: 1px solid #334155; margin-bottom: 16px;
+  }
+  .message { text-align: center; font-size: 16px; margin-bottom: 16px; min-height: 48px; display: flex; align-items: center; justify-content: center; line-height: 1.6; }
+  .message .highlight { font-weight: 700; }
+  .message .highlight.stick { color: #f59e0b; }
+  .message .highlight.switch { color: #3b82f6; }
+  .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    padding: 10px 28px; border: none; border-radius: 8px; font-size: 15px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-stick { background: #f59e0b; color: #0f172a; }
+  .btn-stick:hover:not(:disabled) { background: #d97706; }
+  .btn-switch { background: #3b82f6; color: #fff; }
+  .btn-switch:hover:not(:disabled) { background: #2563eb; }
+  .btn-next { background: #10b981; color: #fff; }
+  .btn-next:hover:not(:disabled) { background: #059669; }
+  .btn-reset { background: #475569; color: #e2e8f0; }
+  .btn-reset:hover:not(:disabled) { background: #64748b; }
+  .btn-auto {
+    background: #8b5cf6; color: #fff; width: 100%; margin-top: 12px;
+  }
+  .btn-auto:hover:not(:disabled) { background: #7c3aed; }
+
+  .auto-panel {
+    margin-top: 12px; padding: 16px; background: #1e293b;
+    border-radius: 12px; border: 1px solid #334155;
+  }
+  .auto-panel label { font-size: 13px; color: #94a3b8; display: block; margin-bottom: 8px; }
+  .auto-panel input[type="number"] {
+    width: 80px; padding: 6px 10px; border-radius: 6px;
+    border: 1px solid #475569; background: #0f172a; color: #e2e8f0;
+    font-size: 14px; text-align: center;
+  }
+  .auto-bar { height: 8px; background: #334155; border-radius: 4px; margin-top: 8px; overflow: hidden; display: flex; }
+  .auto-bar .bar-stick { height: 100%; background: #f59e0b; transition: width 0.3s; }
+  .auto-bar .bar-switch { height: 100%; background: #3b82f6; transition: width 0.3s; }
+
+  .strategy-legend { display: flex; gap: 24px; justify-content: center; font-size: 13px; color: #94a3b8; margin-top: 8px; }
+  .strategy-legend span { display: flex; align-items: center; gap: 6px; }
+  .strategy-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.stick { background: #f59e0b; }
+  .dot.switch { background: #3b82f6; }
+
+  /* Summary Modal */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px); z-index: 100;
+    justify-content: center; align-items: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border: 1px solid #334155; border-radius: 20px;
+    padding: 32px; max-width: 480px; width: 90%; text-align: center;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal h2 { font-size: 24px; margin-bottom: 8px; }
+  .modal .badge { display: inline-block; background: #8b5cf6; color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 20px; margin-bottom: 16px; }
+  .modal .summary-stats { display: flex; gap: 12px; margin: 16px 0; }
+  .modal .summary-stat { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #334155; }
+  .modal .summary-stat .val { font-size: 32px; font-weight: 700; display: block; }
+  .modal .summary-stat .val.stick { color: #f59e0b; }
+  .modal .summary-stat .val.switch { color: #3b82f6; }
+  .modal .summary-stat .lbl { font-size: 12px; color: #94a3b8; }
+  .modal .summary-stat .theo { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .modal .conclusion { font-size: 14px; color: #94a3b8; margin: 12px 0 20px; line-height: 1.6; }
+  .modal .btn-close-modal { background: #8b5cf6; color: #fff; padding: 10px 32px; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .modal .btn-close-modal:hover { background: #7c3aed; }
+  .modal .gap-info { font-size: 13px; padding: 8px 12px; background: #334155; border-radius: 8px; margin: 12px 0; display: inline-block; }
+  .modal .gap-info strong { color: #f59e0b; }
+
+  @media (max-width: 600px) {
+    .door { width: 100px; height: 150px; }
+    .door-face { font-size: 32px; }
+    .door-back .prize { font-size: 40px; }
+    .door-front .door-number { font-size: 16px; }
+    .door-front .door-knob { width: 12px; height: 12px; right: 12px; }
+    .stats { flex-wrap: wrap; }
+    .stat-card { min-width: calc(50% - 6px); }
+    h1 { font-size: 22px; }
+    .modal { padding: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🚪 三门问题</h1>
+  <p class="subtitle">蒙提霍尔问题 · 直观感受概率的力量</p>
+
+  <div class="sound-toggle">
+    <label><input type="checkbox" id="voiceToggle" checked> 🔊 语音引导 &amp; 音效</label>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card" id="s-round">
+      <div class="label">总局数</div>
+      <div class="value total" id="v-round">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">🏠 坚持 · 胜率</div>
+      <div class="value stick" id="v-stick-pct">0%</div>
+      <div class="sub" id="v-stick-detail">0 / 0</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">🔄 换门 · 胜率</div>
+      <div class="value switch" id="v-switch-pct">0%</div>
+      <div class="sub" id="v-switch-detail">0 / 0</div>
+    </div>
+  </div>
+
+  <div class="doors" id="doors">
+    <div class="door" data-index="0"><div class="door-inner">
+      <div class="door-face door-front">
+        <div class="door-number">1</div>
+        <div class="door-knob"></div>
+      </div>
+      <div class="door-face door-back"><div class="prize"></div></div>
+    </div></div>
+    <div class="door" data-index="1"><div class="door-inner">
+      <div class="door-face door-front">
+        <div class="door-number">2</div>
+        <div class="door-knob"></div>
+      </div>
+      <div class="door-face door-back"><div class="prize"></div></div>
+    </div></div>
+    <div class="door" data-index="2"><div class="door-inner">
+      <div class="door-face door-front">
+        <div class="door-number">3</div>
+        <div class="door-knob"></div>
+      </div>
+      <div class="door-face door-back"><div class="prize"></div></div>
+    </div></div>
+  </div>
+
+  <div class="controls" id="controls">
+    <div class="message" id="message">👆 点击一扇门来选择它</div>
+    <div class="btn-group" id="actions">
+      <button class="btn btn-stick" id="btn-stick" disabled>🏠 坚持不换</button>
+      <button class="btn btn-switch" id="btn-switch" disabled>🔄 换另一扇门</button>
+      <button class="btn btn-next" id="btn-next" style="display:none">下一局</button>
+    </div>
+    <button class="btn btn-auto" id="btn-auto">▶ 自动模拟</button>
+  </div>
+
+  <div class="auto-panel" id="auto-panel" style="display:none">
+    <label>
+      模拟次数：
+      <input type="number" id="auto-count" value="1000" min="10" max="100000" step="10">
+      <button class="btn btn-stick" id="auto-start" style="margin-left:8px;padding:6px 16px;font-size:13px;">开始</button>
+      <button class="btn btn-reset" id="auto-stop" style="margin-left:4px;padding:6px 16px;font-size:13px;">停止</button>
+    </label>
+    <div class="auto-bar">
+      <div class="bar-stick" id="bar-stick" style="width:33%"></div>
+      <div class="bar-switch" id="bar-switch" style="width:67%"></div>
+    </div>
+    <div class="strategy-legend">
+      <span><span class="dot stick"></span> 坚持胜率</span>
+      <span><span class="dot switch"></span> 换门胜率</span>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Modal -->
+<div class="modal-overlay" id="summaryModal">
+  <div class="modal">
+    <div class="badge" id="summaryBadge">📊 第 20 局小结</div>
+    <h2>📊 阶段性概率报告</h2>
+    <div class="summary-stats">
+      <div class="summary-stat">
+        <span class="val stick" id="smodal-stick">0%</span>
+        <span class="lbl">🏠 坚持</span>
+        <div class="theo" id="smodal-stick-detail">0 / 0</div>
+      </div>
+      <div class="summary-stat">
+        <span class="val switch" id="smodal-switch">0%</span>
+        <span class="lbl">🔄 换门</span>
+        <div class="theo" id="smodal-switch-detail">0 / 0</div>
+      </div>
+    </div>
+    <div class="gap-info" id="smodal-gap">差距：<strong>0%</strong></div>
+    <div class="conclusion" id="smodal-conclusion"></div>
+    <button class="btn-close-modal" id="btnCloseModal">继续游戏</button>
+  </div>
+</div>
+
+<script>
+// ---- Sound System ----
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function soundOn() {
+  return document.getElementById('voiceToggle').checked;
+}
+
+function playTone(freq, duration, type, vol) {
+  if (!soundOn()) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol || 0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) {}
+}
+
+function playDoorReveal() {
+  if (!soundOn()) return;
+  try {
+    const ctx = getAudioCtx();
+    const bufSize = ctx.sampleRate * 0.4;
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      const t = i / ctx.sampleRate;
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - t / 0.4, 3) * 0.3;
+      data[i] += Math.sin(2 * Math.PI * (80 + t * 200) * t) * 0.08 * (1 - t / 0.4);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    src.connect(gain).connect(ctx.destination);
+    src.start(ctx.currentTime);
+  } catch(e) {}
+}
+
+function playWinJingle() {
+  if (!soundOn()) return;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.2, 'sine', 0.12), i * 120);
+  });
+}
+
+function playLoseSound() {
+  playTone(200, 0.4, 'sawtooth', 0.08);
+  setTimeout(() => playTone(160, 0.5, 'sawtooth', 0.06), 150);
+}
+
+function playSummaryChime() {
+  if (!soundOn()) return;
+  [523.25, 659.25, 783.99].forEach((f, i) => {
+    setTimeout(() => playTone(f, 0.3, 'triangle', 0.1), i * 150);
+  });
+}
+
+// ---- Voice System ----
+let voiceReady = false;
+let zhVoice = null;
+
+function initVoice() {
+  if (typeof speechSynthesis === 'undefined') return;
+  const tryVoice = () => {
+    const voices = speechSynthesis.getVoices();
+    zhVoice = voices.find(v => v.lang.startsWith('zh')) || voices.find(v => v.lang.startsWith('cmn'));
+    voiceReady = true;
+  };
+  tryVoice();
+  speechSynthesis.onvoiceschanged = tryVoice;
+}
+
+function speak(text) {
+  if (!soundOn() || !voiceReady || typeof speechSynthesis === 'undefined') return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+  if (zhVoice) utter.voice = zhVoice;
+  speechSynthesis.speak(utter);
+}
+
+function stopSpeech() {
+  if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+}
+
+// ---- Game State ----
+const state = {
+  phase: 'choose',
+  car: -1,
+  pick: -1,
+  reveal: -1,
+  remaining: -1,
+  total: 0,
+  stickWins: 0,
+  stickTotal: 0,
+  switchWins: 0,
+  switchTotal: 0,
+  lastSummaryRound: 0,
+};
+
+const doors = document.querySelectorAll('.door');
+const msg = document.getElementById('message');
+const btnStick = document.getElementById('btn-stick');
+const btnSwitch = document.getElementById('btn-switch');
+const btnNext = document.getElementById('btn-next');
+const btnAuto = document.getElementById('btn-auto');
+const autoPanel = document.getElementById('auto-panel');
+const autoStart = document.getElementById('auto-start');
+const autoStop = document.getElementById('auto-stop');
+const autoCount = document.getElementById('auto-count');
+const barStick = document.getElementById('bar-stick');
+const barSwitch = document.getElementById('bar-switch');
+
+const modalOverlay = document.getElementById('summaryModal');
+const smStick = document.getElementById('smodal-stick');
+const smSwitch = document.getElementById('smodal-switch');
+const smStickD = document.getElementById('smodal-stick-detail');
+const smSwitchD = document.getElementById('smodal-switch-detail');
+const smGap = document.getElementById('smodal-gap');
+const smConclusion = document.getElementById('smodal-conclusion');
+const smBadge = document.getElementById('summaryBadge');
+
+function updateStats() {
+  document.getElementById('v-round').textContent = state.total;
+  const sp = state.stickTotal > 0 ? Math.round(state.stickWins / state.stickTotal * 100) : 0;
+  const sw = state.switchTotal > 0 ? Math.round(state.switchWins / state.switchTotal * 100) : 0;
+  document.getElementById('v-stick-pct').textContent = sp + '%';
+  document.getElementById('v-switch-pct').textContent = sw + '%';
+  document.getElementById('v-stick-detail').textContent = `${state.stickWins} / ${state.stickTotal}`;
+  document.getElementById('v-switch-detail').textContent = `${state.switchWins} / ${state.switchTotal}`;
+  const totalBar = state.stickTotal + state.switchTotal;
+  if (totalBar > 0) {
+    barStick.style.width = (state.stickTotal / totalBar * 100) + '%';
+    barSwitch.style.width = (state.switchTotal / totalBar * 100) + '%';
+  }
+}
+
+function resetDoors() {
+  doors.forEach(d => {
+    d.classList.remove('selected', 'open', 'revealed', 'won', 'lost', 'disabled');
+    d.querySelector('.prize').textContent = '';
+  });
+}
+
+function checkSummary() {
+  if (state.total > 0 && state.total % 20 === 0 && state.total !== state.lastSummaryRound) {
+    state.lastSummaryRound = state.total;
+    showSummary();
+  }
+}
+
+function showSummary() {
+  const sp = state.stickTotal > 0 ? Math.round(state.stickWins / state.stickTotal * 100) : 0;
+  const sw = state.switchTotal > 0 ? Math.round(state.switchWins / state.switchTotal * 100) : 0;
+  const gap = sw - sp;
+
+  smBadge.textContent = `📊 第 ${state.total} 局小结`;
+  smStick.textContent = sp + '%';
+  smSwitch.textContent = sw + '%';
+  smStickD.textContent = `${state.stickWins} / ${state.stickTotal}`;
+  smSwitchD.textContent = `${state.switchWins} / ${state.switchTotal}`;
+
+  const spTheo = Math.round(state.stickTotal * 100 / 3) / 100;
+  const swTheo = Math.round(state.switchTotal * 200 / 3) / 100;
+  smGap.innerHTML = `坚持换门胜率差距：<strong>${gap}%</strong>`;
+
+  let conclusion = '';
+  let voiceText = '';
+  if (state.total >= 40) {
+    const expectedGap = Math.round(100 / 3);
+    if (gap >= expectedGap - 10) {
+      conclusion = `换门策略胜率约为坚持的 <strong>2 倍</strong>，与数学预期高度吻合！三门问题的核心在于：主持人排除了一扇错误门后，换门相当于获得了两次机会。`;
+      voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。换门策略胜率约为坚持的两倍，与数学预期高度吻合！三门问题的核心在于，主持人排除了一扇错误门后，换门相当于获得了两次机会。`;
+    } else {
+      conclusion = `坚持胜率 <strong>${sp}%</strong>，换门胜率 <strong>${sw}%</strong>，换门优势已开始显现。继续增加试验次数，换门胜率将趋近于 <strong>66.7%</strong>。`;
+      voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。换门优势已开始显现。继续增加试验次数，换门胜率将趋近于百分之六十六点七。`;
+    }
+  } else {
+    conclusion = `目前坚持胜率 <strong>${sp}%</strong>，换门胜率 <strong>${sw}%</strong>。随着试验次数增加，换门的优势会越来越明显，理论上限为 <strong>66.7%</strong>，而坚持只有 <strong>33.3%</strong>。`;
+    voiceText = `第${state.total}局小结。坚持胜率${sp}%，换门胜率${sw}%。随着试验次数增加，换门的优势会越来越明显，理论上限为百分之六十六点七，而坚持只有百分之三十三点三。`;
+  }
+
+  smConclusion.innerHTML = conclusion;
+  modalOverlay.classList.add('show');
+  playSummaryChime();
+  setTimeout(() => speak(voiceText), 400);
+}
+
+function initRound() {
+  resetDoors();
+  stopSpeech();
+  state.car = Math.floor(Math.random() * 3);
+  state.pick = -1;
+  state.reveal = -1;
+  state.remaining = -1;
+  state.phase = 'choose';
+  msg.innerHTML = '👆 点击一扇门来选择它';
+  btnStick.disabled = true;
+  btnSwitch.disabled = true;
+  btnNext.style.display = 'none';
+  doors.forEach(d => d.classList.remove('disabled'));
+  speak('请选择一扇门');
+}
+
+function doorClick(index) {
+  if (state.phase !== 'choose') return;
+  if (state.pick === index) return;
+  state.pick = index;
+  doors[index].classList.add('selected');
+
+  const goatDoors = [0,1,2].filter(i => i !== state.car && i !== state.pick);
+  state.reveal = goatDoors[Math.floor(Math.random() * goatDoors.length)];
+  state.remaining = [0,1,2].find(i => i !== state.pick && i !== state.reveal);
+
+  // play door reveal sound
+  playDoorReveal();
+
+  doors[state.reveal].classList.add('revealed', 'open', 'disabled');
+  const goatEmoji = Math.random() > 0.5 ? '🐐' : '🐑';
+  doors[state.reveal].querySelector('.prize').textContent = goatEmoji;
+
+  doors.forEach(d => d.classList.add('disabled'));
+  doors[state.pick].classList.remove('disabled');
+
+  msg.innerHTML = `主持人打开了 <strong>${state.reveal + 1}</strong> 号门，后面是${goatEmoji}。<br>你要 <span class="highlight stick">坚持</span> 还是 <span class="highlight switch">换到 ${state.remaining + 1} 号门</span>？`;
+  btnStick.disabled = false;
+  btnSwitch.disabled = false;
+  state.phase = 'reveal';
+
+  const goatWord = goatEmoji === '🐐' ? '山羊' : '绵羊';
+  setTimeout(() => speak(`主持人打开了${state.reveal + 1}号门，后面是${goatWord}。你要坚持还是换到${state.remaining + 1}号门？`), 700);
+}
+
+function decide(stick) {
+  if (state.phase !== 'reveal') return;
+  stopSpeech();
+  const finalDoor = stick ? state.pick : state.remaining;
+  const won = finalDoor === state.car;
+  state.total++;
+  if (stick) { state.stickTotal++; if (won) state.stickWins++; }
+  else { state.switchTotal++; if (won) state.switchWins++; }
+
+  // play final reveal sound
+  doors[state.car].classList.add('open', 'won');
+  doors[state.car].querySelector('.prize').textContent = '🚗';
+
+  if (!won) doors[finalDoor].classList.add('lost', 'open');
+
+  doors.forEach(d => d.classList.add('disabled'));
+
+  const emoji = won ? '🎉' : '😢';
+  const strategy = stick ? '坚持' : '换门';
+  msg.innerHTML = `${emoji} ${strategy}！${won ? '你赢得了 <strong>🚗 汽车</strong>！' : '🥲 是山羊...'}`;
+
+  if (won) playWinJingle();
+  else playLoseSound();
+
+  setTimeout(() => speak(won ? '恭喜你赢得了汽车！' : '很遗憾，是山羊。'), 400);
+
+  btnStick.disabled = true;
+  btnSwitch.disabled = true;
+  btnNext.style.display = 'inline-block';
+  state.phase = 'result';
+  updateStats();
+  checkSummary();
+}
+
+function autoSimulate(count) {
+  for (let i = 0; i < count; i++) {
+    const car = Math.floor(Math.random() * 3);
+    const pick = Math.floor(Math.random() * 3);
+    const goatDoors = [0,1,2].filter(i => i !== car && i !== pick);
+    const reveal = goatDoors[Math.floor(Math.random() * goatDoors.length)];
+    const remaining = [0,1,2].find(i => i !== pick && i !== reveal);
+    const stickWin = pick === car;
+    const switchWin = remaining === car;
+    state.total++;
+    state.stickTotal++;
+    state.switchTotal++;
+    if (stickWin) state.stickWins++;
+    if (switchWin) state.switchWins++;
+  }
+  updateStats();
+  // check for 20-round boundary crossing
+  checkSummary();
+}
+
+// Events
+doors.forEach(d => d.addEventListener('click', () => {
+  if (d.classList.contains('disabled')) return;
+  doorClick(parseInt(d.dataset.index));
+}));
+
+document.getElementById('btn-stick').addEventListener('click', () => decide(true));
+document.getElementById('btn-switch').addEventListener('click', () => decide(false));
+document.getElementById('btn-next').addEventListener('click', initRound);
+
+btnAuto.addEventListener('click', () => {
+  autoPanel.style.display = autoPanel.style.display === 'none' ? 'block' : 'none';
+});
+
+autoStart.addEventListener('click', () => {
+  const count = parseInt(autoCount.value) || 1000;
+  autoStart.disabled = true;
+  autoStop.disabled = true;
+  autoCount.disabled = true;
+  autoSimulate(count);
+  autoStart.disabled = false;
+  autoStop.disabled = true;
+  autoCount.disabled = false;
+  updateStats();
+});
+
+document.getElementById('btnCloseModal').addEventListener('click', () => {
+  modalOverlay.classList.remove('show');
+});
+
+document.getElementById('voiceToggle').addEventListener('change', () => {
+  if (!document.getElementById('voiceToggle').checked) stopSpeech();
+});
+
+initVoice();
+initRound();
+</script>
+</body>
+</html>
