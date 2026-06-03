@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>靓妹硬币 · 换还是不换</title>
+<title>两枚硬币 · 换还是不换</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -104,7 +104,7 @@ body{
 <body>
 <div class="container">
 <div class="header">
-  <h1>🪙 靓妹硬币</h1>
+  <h1>🪙 两枚硬币</h1>
   <div class="sub">两枚硬币 · 一面金一面银 vs 两面金</div>
 </div>
 <div class="toolbar">
@@ -151,7 +151,7 @@ body{
 <!-- Help Modal -->
 <div class="modal-overlay" id="helpModal">
   <div class="modal">
-    <h2>🪙 规则说明</h2>
+    <h2>🪙 两枚硬币 · 规则说明</h2>
     <div class="tag">概率谜题</div>
     <div class="body">
       <p><b>设定：</b>袋子里有两枚硬币</p>
@@ -207,7 +207,7 @@ function rst(){
   [cA,cB].forEach(c=>{c.classList.remove('flip');c.querySelector('.coin-back').textContent='';c.classList.remove('done')});
   [sA,sB].forEach(s=>{s.classList.remove('highlight','winner','loser','result')});
   msg.innerHTML='点击一枚硬币翻开它 ✨';
-  if(S.total===0)spk('欢迎来到靓妹硬币游戏。点击一枚硬币。');
+  if(S.total===0)spk('欢迎来到两枚硬币游戏。点击一枚硬币。');
 }
 function fin(revealBoth){
   [cA,cB].forEach(c=>c.classList.add('done'));
