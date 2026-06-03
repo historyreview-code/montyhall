@@ -3,362 +3,315 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>靓妹硬币 · 两枚硬币概率问题</title>
+<title>靓妹硬币 · 换还是不换</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0f172a;--bg2:#1e293b;--bg3:#334155;--bdr:#475569;--txt:#e2e8f0;--txt2:#94a3b8;--txt3:#64748b;--gold:#f59e0b;--silv:#94a3b8;--purp:#8b5cf6;--succ:#10b981;--dngr:#ef4444}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;justify-content:center;align-items:center}
-.container{max-width:700px;width:100%;padding:24px}
-h1{text-align:center;font-size:28px;margin-bottom:4px}
-.subtitle{text-align:center;color:var(--txt2);font-size:14px;margin-bottom:24px}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;--bg2:#141a2e;--bg3:#1e2640;
+  --brd:#2a3555;--txt:#e8ecf4;--txt2:#8896b6;--txt3:#5a6a8a;
+  --gold:#f59e0b;--gold2:#fbbf24;--gold3:#92400e;
+  --silv:#94a3b8;--silv2:#cbd5e1;
+  --grn:#10b981;--grn2:#34d399;
+  --purp:#8b5cf6;
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--txt);min-height:100vh;
+  display:flex;justify-content:center;align-items:center;
+}
+.container{max-width:640px;width:100%;padding:20px}
+/* Header */
+.header{text-align:center;margin-bottom:20px}
+.header h1{font-size:26px;background:linear-gradient(135deg,var(--gold),var(--gold2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.header .sub{font-size:13px;color:var(--txt2);margin-top:2px}
+/* Toolbar */
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .toolbar label{font-size:12px;color:var(--txt3);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
 .toolbar input[type=checkbox]{accent-color:var(--purp);cursor:pointer}
-.stats{display:flex;gap:12px;margin-bottom:24px}
-.stat-card{flex:1;background:var(--bg2);border-radius:12px;padding:16px;text-align:center;border:1px solid var(--bg3)}
-.stat-card .lbl{font-size:12px;color:var(--txt2);margin-bottom:4px}
-.stat-card .val{font-size:28px;font-weight:700}
-.stat-card .val.stick{color:var(--gold)}
-.stat-card .val.switch{color:var(--succ)}
-.stat-card .val.total{color:var(--purp)}
-.stat-card .sub{font-size:11px;color:var(--txt3);margin-top:2px}
-.coin-purse{display:flex;gap:40px;justify-content:center;margin-bottom:24px}
-.purse{background:var(--bg2);border-radius:16px;padding:24px;border:1px solid var(--bg3);text-align:center;width:220px}
-.purse .lbl{font-size:13px;color:var(--txt2);margin-bottom:12px;font-weight:600}
-.coin-bowl{display:flex;gap:12px;justify-content:center;perspective:500px}
-.coin{width:70px;height:70px;border-radius:50%;cursor:pointer;transition:transform .3s;transform-style:preserve-3d}
-.coin:hover:not(.disabled){transform:scale(1.1)}
-.coin-inner{width:100%;height:100%;transition:transform .8s;transform-style:preserve-3d}
+.toolbar .help-btn{background:transparent;border:1px solid var(--brd);color:var(--txt2);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;transition:all .2s}
+.toolbar .help-btn:hover{border-color:var(--purp);color:var(--purp)}
+/* Stats Bar */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.stat{background:var(--bg2);border:1px solid var(--brd);border-radius:12px;padding:12px;text-align:center}
+.stat .lbl{font-size:11px;color:var(--txt3);margin-bottom:2px}
+.stat .val{font-size:26px;font-weight:700}
+.stat .val.gold{color:var(--gold)}.stat .val.grn{color:var(--grn)}.stat .val.tot{color:var(--purp)}
+.stat .sub{font-size:10px;color:var(--txt3);margin-top:1px}
+/* Coin Display */
+.coin-area{display:flex;gap:40px;justify-content:center;margin-bottom:20px;perspective:600px}
+.coin-slot{background:var(--bg2);border:1px solid var(--brd);border-radius:16px;padding:24px 28px;text-align:center;width:210px;transition:all .3s}
+.coin-slot.highlight{border-color:var(--gold);box-shadow:0 0 20px rgba(245,158,11,.15)}
+.coin-slot .slot-lbl{font-size:12px;color:var(--txt2);margin-bottom:14px;font-weight:600}
+.coin-slot .slot-lbl span{display:block;font-weight:400;font-size:11px;color:var(--txt3)}
+.coin{width:80px;height:80px;margin:0 auto;border-radius:50%;cursor:pointer;position:relative;transition:transform .3s}
+.coin:hover:not(.done){transform:scale(1.08)}
+.coin-inner{width:100%;height:100%;position:relative;transition:transform .8s cubic-bezier(.4,0,.2,1);transform-style:preserve-3d}
 .coin.flip .coin-inner{transform:rotateY(180deg)}
-.coin-face{position:absolute;width:100%;height:100%;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;border:3px solid var(--bdr)}
-.coin-front{background:linear-gradient(145deg,var(--bg2),var(--bg));z-index:2}
+.coin-face{position:absolute;width:100%;height:100%;border-radius:50%;backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;border:3px solid var(--brd);box-sizing:border-box}
+.coin-front{background:radial-gradient(circle at 40% 35%,var(--bg2),var(--bg));z-index:2}
+.coin-front .pattern{font-size:18px;color:var(--txt3);opacity:.5}
 .coin-back{transform:rotateY(180deg)}
-.coin.gold .coin-back{background:linear-gradient(145deg,#fbbf24,#d97706);border-color:var(--gold);color:#0f172a}
-.coin.silver .coin-back{background:linear-gradient(145deg,#e2e8f0,#94a3b8);border-color:var(--silv);color:#0f172a}
-.coin.gold-gold .coin-back{background:linear-gradient(145deg,#fbbf24,#d97706);border-color:var(--gold);color:#0f172a}
-.coin.selected .coin-front{border-color:var(--gold);box-shadow:0 0 20px rgba(245,158,11,.3)}
-.coin.revealed .coin-inner{transform:rotateY(180deg)}
-.controls{background:var(--bg2);border-radius:12px;padding:20px;border:1px solid var(--bg3);margin-bottom:16px}
-.msg{text-align:center;font-size:16px;margin-bottom:16px;min-height:48px;display:flex;align-items:center;justify-content:center;line-height:1.6}
-.msg .highlight{font-weight:700}
-.btn-group{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-.btn{padding:10px 28px;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;transition:all .2s}
-.btn:active{transform:scale(.96)}.btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-stick{background:var(--gold);color:var(--bg)}.btn-stick:hover:not(:disabled){background:#d97706}
-.btn-switch{background:var(--succ);color:#fff}.btn-switch:hover:not(:disabled){background:#059669}
-.btn-next{background:var(--purp);color:#fff}.btn-next:hover:not(:disabled){background:#7c3aed}
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);justify-content:center;align-items:center;z-index:100}
+.coin-back.gold{background:linear-gradient(135deg,#fbbf24,#d97706);border-color:var(--gold);color:#1a1a2e;box-shadow:inset 0 2px 8px rgba(255,255,255,.3)}
+.coin-back.silver{background:linear-gradient(135deg,#e2e8f0,#94a3b8);border-color:var(--silv);color:#1a1a2e;box-shadow:inset 0 2px 8px rgba(255,255,255,.3)}
+.coin-back.gg{background:linear-gradient(135deg,#fbbf24,#d97706);border-color:var(--gold);color:#1a1a2e;text-shadow:0 2px 4px rgba(0,0,0,.2)}
+.coin-back.gs{background:linear-gradient(135deg,#fbbf24,#d97706);border-color:var(--gold);color:#1a1a2e}
+.coin-slot.result .coin{cursor:default}
+.coin-slot.winner .coin-back{border-color:var(--grn);box-shadow:0 0 20px rgba(16,185,129,.4)}
+.coin-slot.loser .coin-back{border-color:var(--silv);opacity:.7}
+/* Controls */
+.controls{background:var(--bg2);border:1px solid var(--brd);border-radius:14px;padding:20px;margin-bottom:16px}
+.msg{text-align:center;font-size:15px;min-height:52px;display:flex;align-items:center;justify-content:center;line-height:1.7;color:var(--txt)}
+.msg .hl{font-weight:700}
+.msg .hl.gold{color:var(--gold)}.msg .hl.grn{color:var(--grn)}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.btn{padding:10px 28px;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.btn:active{transform:scale(.96)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-stick{background:linear-gradient(135deg,var(--gold),#d97706);color:#1a1a2e}
+.btn-stick:hover:not(:disabled){box-shadow:0 4px 15px rgba(245,158,11,.3)}
+.btn-switch{background:linear-gradient(135deg,var(--grn),#059669);color:#fff}
+.btn-switch:hover:not(:disabled){box-shadow:0 4px 15px rgba(16,185,129,.3)}
+.btn-next{background:linear-gradient(135deg,var(--purp),#7c3aed);color:#fff}
+.btn-next:hover:not(:disabled){box-shadow:0 4px 15px rgba(139,92,246,.3)}
+/* Modals */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);justify-content:center;align-items:center;z-index:100;backdrop-filter:blur(4px)}
 .modal-overlay.show{display:flex}
-.modal{background:linear-gradient(145deg,var(--bg2),var(--bg));border:1px solid var(--bg3);border-radius:20px;padding:32px;max-width:480px;width:90%;text-align:center;animation:modalIn .3s ease}
-@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.modal h2{font-size:24px;margin-bottom:8px}
-.modal .badge{display:inline-block;background:var(--purp);color:#fff;font-size:12px;padding:2px 10px;border-radius:20px;margin-bottom:16px}
-.modal .summary-stats{display:flex;gap:12px;margin:16px 0}
-.modal .summary-stat{flex:1;padding:12px;border-radius:10px;border:1px solid var(--bg3)}
-.modal .summary-stat .val{font-size:32px;font-weight:700;display:block}
-.modal .summary-stat .val.stick{color:var(--gold)}
-.modal .summary-stat .val.switch{color:var(--succ)}
-.modal .conclusion{font-size:14px;color:var(--txt2);margin:12px 0 20px;line-height:1.6}
+.modal{background:linear-gradient(135deg,var(--bg2),var(--bg));border:1px solid var(--brd);border-radius:20px;padding:32px;max-width:420px;width:90%;text-align:center;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal h2{font-size:22px;margin-bottom:6px}
+.modal .tag{display:inline-block;background:var(--purp);color:#fff;font-size:11px;padding:3px 12px;border-radius:20px;margin-bottom:16px}
+.modal .body{text-align:left;font-size:13px;color:var(--txt2);line-height:1.8;margin-bottom:16px}
+.modal .body p{margin-bottom:6px}
+.modal .close-btn{background:linear-gradient(135deg,var(--purp),#7c3aed);color:#fff;padding:10px 32px;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.modal .close-btn:hover{box-shadow:0 4px 15px rgba(139,92,246,.3)}
+/* Summary Modal */
+.summary-stat{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.summary-stat .box{padding:14px;border-radius:12px;border:1px solid var(--brd);background:var(--bg)}
+.summary-stat .box .big{font-size:30px;font-weight:700;display:block}
+.summary-stat .box .big.gold{color:var(--gold)}.summary-stat .box .big.grn{color:var(--grn)}
+.summary-stat .box .lbl{font-size:11px;color:var(--txt3);margin-top:2px}
+.conclusion{font-size:13px;color:var(--txt2);line-height:1.7;margin-bottom:16px}
+
 @media(max-width:600px){
-  .stats{flex-direction:column;gap:8px}.stat-card{padding:12px}.stat-card .val{font-size:22px}
-  .coin-purse{flex-direction:column;align-items:center;gap:20px}.purse{width:100%;max-width:280px}
-  .coin{width:60px;height:60px}.coin-face{font-size:22px}
-  .container{padding:12px}h1{font-size:22px}.controls{padding:14px}
-  .btn{padding:8px 20px;font-size:13px}.msg{font-size:14px}.modal{padding:20px}
+  .stats{grid-template-columns:1fr}.coin-area{flex-direction:column;align-items:center;gap:16px}.coin-slot{width:100%;max-width:260px}.container{padding:14px}.header h1{font-size:22px}.btn{padding:8px 20px;font-size:13px}
+  .coin{width:70px;height:70px}.coin-face{font-size:26px}
 }
 @media(max-width:400px){
-  .coin{width:50px;height:50px}.coin-face{font-size:18px}
-  .btn{padding:6px 14px;font-size:12px}.btn-group{gap:8px}h1{font-size:18px}
+  .coin{width:60px;height:60px}.coin-face{font-size:22px}.coin-slot{padding:16px 20px}.btn{padding:6px 16px;font-size:12px}.btns{gap:8px}
 }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>🪙 靓妹硬币</h1>
-<div class="subtitle">两枚硬币 · 金+银 vs 金+金</div>
+<div class="header">
+  <h1>🪙 靓妹硬币</h1>
+  <div class="sub">两枚硬币 · 一面金一面银 vs 两面金</div>
+</div>
 <div class="toolbar">
   <div>
-    <label><input type="checkbox" id="soundToggle" checked> 🔊 音效</label>
-    <label style="margin-left:12px"><input type="checkbox" id="voiceToggle" checked> 🗣 语音</label>
+    <label><input type="checkbox" id="soundOn" checked> 🔊</label>
+    <label style="margin-left:10px"><input type="checkbox" id="voiceOn" checked> 🗣</label>
   </div>
-  <div>
-    <button id="btnHelp" style="background:transparent;border:1px solid var(--bdr);color:var(--txt2);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;">❓ 规则</button>
-  </div>
+  <button class="help-btn" id="helpBtn">❓ 规则</button>
 </div>
 <div class="stats">
-  <div class="stat-card"><div class="lbl">总轮数</div><div class="val total" id="v-round">0</div></div>
-  <div class="stat-card"><div class="lbl">🏠 坚持胜率</div><div class="val stick" id="v-stick-pct">0%</div><div class="sub" id="v-stick-detail">0/0</div></div>
-  <div class="stat-card"><div class="lbl">🔄 换币胜率</div><div class="val switch" id="v-switch-pct">0%</div><div class="sub" id="v-switch-detail">0/0</div></div>
+  <div class="stat"><div class="lbl">🏠 坚持</div><div class="val gold" id="stickPct">0%</div><div class="sub" id="stickDet">0/0</div></div>
+  <div class="stat"><div class="lbl">🔄 换币</div><div class="val grn" id="switchPct">0%</div><div class="sub" id="switchDet">0/0</div></div>
+  <div class="stat"><div class="lbl">总轮数</div><div class="val tot" id="totalR">0</div></div>
 </div>
-<div class="coin-purse">
-  <div class="purse">
-    <div class="lbl">👜 A · 金+银</div>
-    <div class="coin-bowl" id="coin-bowl-a">
-      <div class="coin" data-purse="a" tabindex="0" role="button" aria-label="选择口袋A硬币"><div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back"></div></div></div>
+<div class="coin-area">
+  <div class="coin-slot" id="slotA">
+    <div class="slot-lbl">👜 口袋 A<span>金 + 银</span></div>
+    <div class="coin" id="coinA" tabindex="0" role="button" aria-label="选择口袋A硬币">
+      <div class="coin-inner">
+        <div class="coin-face coin-front"><div class="pattern">✦</div></div>
+        <div class="coin-face coin-back"></div>
+      </div>
     </div>
   </div>
-  <div class="purse">
-    <div class="lbl">👜 B · 金+金</div>
-    <div class="coin-bowl" id="coin-bowl-b">
-      <div class="coin" data-purse="b" tabindex="0" role="button" aria-label="选择口袋B硬币"><div class="coin-inner"><div class="coin-face coin-front">?</div><div class="coin-face coin-back"></div></div></div>
+  <div class="coin-slot" id="slotB">
+    <div class="slot-lbl">👜 口袋 B<span>金 + 金</span></div>
+    <div class="coin" id="coinB" tabindex="0" role="button" aria-label="选择口袋B硬币">
+      <div class="coin-inner">
+        <div class="coin-face coin-front"><div class="pattern">✦</div></div>
+        <div class="coin-face coin-back"></div>
+      </div>
     </div>
   </div>
 </div>
 <div class="controls">
-  <div class="msg" id="message">两枚硬币：一枚 <strong>金+银</strong>，一枚 <strong>金+金</strong><br>随机摸一枚，翻出一面<br>👆 点击口袋中的硬币</div>
-  <div class="btn-group">
-    <button class="btn btn-stick" id="btn-stick" disabled>🏠 坚持</button>
-    <button class="btn btn-switch" id="btn-switch" disabled>🔄 换另一枚</button>
-    <button class="btn btn-next" id="btn-next" style="display:none">下一局</button>
+  <div class="msg" id="msg">点击一枚硬币翻开它 ✨</div>
+  <div class="btns" id="actionBtns">
+    <button class="btn btn-stick" id="btnStick" disabled>🏠 坚持这枚</button>
+    <button class="btn btn-switch" id="btnSwitch" disabled>🔄 换另一枚</button>
+    <button class="btn btn-next" id="btnNext" style="display:none">下一局 →</button>
   </div>
 </div>
 </div>
-<div class="modal-overlay" id="helpModal" style="display:none;">
-  <div class="modal" style="max-width:480px">
-    <h2>🪙 靓妹硬币问题</h2>
-    <div class="badge">规则说明</div>
-    <div style="text-align:left;font-size:14px;color:var(--txt2);line-height:1.8;margin-bottom:20px">
-      <p><strong>设定：</strong>两枚硬币</p>
-      <p>🪙 <strong>A</strong> 一面<span style="color:var(--gold)">金</span>，一面<span style="color:var(--silv)">银</span></p>
-      <p>🪙 <strong>B</strong> 两面都是<span style="color:var(--gold)">金</span></p>
-      <br><p>随机摸一枚，翻出一面给靓妹看。</p>
-      <p>如果看到金色，你可以选择 <strong>坚持</strong> 或 <strong>换</strong> 另一枚。</p>
-      <br><p><strong>🤯 概率真相：</strong></p>
-      <p>看到金色 → 手中是金+金的概率 = <strong>2/3</strong></p>
-      <p>因为金+金有 2 个金面，金+银只有 1 个。</p>
-      <p>3 种等可能情况中，2 种来自金+金。</p>
-      <br><p style="color:var(--gold);font-weight:600">坚持胜率 2/3，换只有 1/3！</p>
-    </div>
-    <button class="btn-close-modal" id="btnCloseHelp">我知道了 ✨</button>
-  </div>
-</div>
-<div class="modal-overlay" id="summaryModal">
+<!-- Help Modal -->
+<div class="modal-overlay" id="helpModal">
   <div class="modal">
-    <div class="badge" id="summaryBadge">📊 小结</div>
-    <div class="summary-stats">
-      <div class="summary-stat"><span class="val stick" id="smodal-stick">0%</span><div class="lbl">🏠 坚持</div><div class="theo" id="smodal-stick-detail">0/0</div></div>
-      <div class="summary-stat"><span class="val switch" id="smodal-switch">0%</span><div class="lbl">🔄 换币</div><div class="theo" id="smodal-switch-detail">0/0</div></div>
+    <h2>🪙 规则说明</h2>
+    <div class="tag">概率谜题</div>
+    <div class="body">
+      <p><b>设定：</b>袋子里有两枚硬币</p>
+      <p>🪙 <b>A</b> — 一面<b style="color:var(--gold)">金</b>，一面<b style="color:var(--silv)">银</b></p>
+      <p>🪙 <b>B</b> — 两面都是<b style="color:var(--gold)">金</b></p>
+      <p style="margin-top:12px">随机摸一枚，翻出一面。<br>如果看到<b style="color:var(--gold)">金色</b>，你可以：</p>
+      <p style="padding-left:16px">🏠 <b>坚持</b>这枚，或 🔄 <b>换</b>另一枚</p>
+      <p style="margin-top:12px"><b>🤯 关键：</b>金+金有 2 个金面，<br>金+银只有 1 个。</p>
+      <p>看到金色 → 手中是金+金概率 = <b style="color:var(--gold)">2/3</b></p>
+      <p style="margin-top:12px;color:var(--gold);font-weight:600">坚持胜率 66.7%，换币仅 33.3%</p>
     </div>
-    <div class="conclusion" id="smodal-conclusion"></div>
-    <button class="btn-close-modal" id="btnCloseModal">继续挑战</button>
+    <button class="close-btn" id="closeHelp">我知道了 ✨</button>
+  </div>
+</div>
+<!-- Summary Modal -->
+<div class="modal-overlay" id="sumModal">
+  <div class="modal">
+    <h2>📊 小结</h2>
+    <div class="tag" id="sumTag">第 0 局</div>
+    <div class="summary-stat">
+      <div class="box"><span class="big gold" id="sumStick">0%</span><div class="lbl">🏠 坚持</div></div>
+      <div class="box"><span class="big grn" id="sumSwitch">0%</span><div class="lbl">🔄 换币</div></div>
+    </div>
+    <div class="conclusion" id="sumConc"></div>
+    <button class="close-btn" id="closeSum">继续 →</button>
   </div>
 </div>
 <script>
-// ---- Sound ----
-let audioCtx=null;
-function getAudioCtx(){
-  if(!audioCtx||audioCtx.state==='closed')audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  if(audioCtx.state==='suspended')audioCtx.resume();
-  return audioCtx;
-}
-function soundOn(){return document.getElementById('soundToggle').checked}
-function playTone(f,d,t,v){
-  if(!soundOn())return;
-  try{
-    const ctx=getAudioCtx(),o=ctx.createOscillator(),g=ctx.createGain();
-    o.type=t||'sine';o.frequency.value=f;
-    const t0=ctx.currentTime;
-    g.gain.setValueAtTime(v||.15,t0);g.gain.exponentialRampToValueAtTime(.001,t0+d);
-    o.connect(g).connect(ctx.destination);o.start(t0);o.stop(t0+d);
-  }catch(e){}
-}
-function playCoinFlip(){
-  if(!soundOn())return;
-  try{
-    const ctx=getAudioCtx(),b=ctx.sampleRate*.3,buf=ctx.createBuffer(1,b,ctx.sampleRate),d=buf.getChannelData(0);
-    for(let i=0;i<b;i++){const t=i/ctx.sampleRate;d[i]=(Math.random()*2-1)*Math.pow(1-t/.3,2)*.2}
-    const s=ctx.createBufferSource();s.buffer=buf;
-    const g=ctx.createGain(),t0=ctx.currentTime;
-    g.gain.setValueAtTime(.2,t0);g.gain.exponentialRampToValueAtTime(.001,t0+.3);
-    s.connect(g).connect(ctx.destination);s.start(t0);
-  }catch(e){}
-}
-function playWinJingle(){
-  if(!soundOn())return;
-  const m=[523,659,784,1047];
-  m.forEach((f,i)=>setTimeout(()=>playTone(f,.15,'sine',.1),i*120));
-}
-function playLoseSound(){
-  if(!soundOn())return;
-  [350,262,196].forEach((f,i)=>setTimeout(()=>playTone(f,.18,'sawtooth',.07-i*.02),i*100));
-}
-function playSummaryChime(){
-  if(!soundOn())return;
-  [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,.3,'triangle',.1),i*150));
-}
+// ---- Audio ----
+let actx=null;
+function ax(){if(!actx||actx.state==='closed')actx=new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume();return actx}
+function son(){return document.getElementById('soundOn').checked}
+function tone(f,d,t,v){if(!son())return;try{const c=ax(),o=c.createOscillator(),g=c.createGain();o.type=t||'sine';o.frequency.value=f;const n=c.currentTime;g.gain.setValueAtTime(v||.15,n);g.gain.exponentialRampToValueAtTime(.001,n+d);o.connect(g).connect(c.destination);o.start(n);o.stop(n+d)}catch(e){}}
+function sFlip(){if(!son())return;try{const c=ax(),b=c.sampleRate*.25,buf=c.createBuffer(1,b,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<b;i++){const t=i/c.sampleRate;d[i]=(Math.random()*2-1)*Math.pow(1-t/.25,2)*.2}const s=c.createBufferSource();s.buffer=buf;const g=c.createGain(),n=c.currentTime;g.gain.setValueAtTime(.25,n);g.gain.exponentialRampToValueAtTime(.001,n+.25);s.connect(g).connect(c.destination);s.start(n)}catch(e){}}
+function sWin(){if(!son())return;[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.12,'sine',.09),i*100))}
+function sLose(){if(!son())return;[350,262,196].forEach((f,i)=>setTimeout(()=>tone(f,.16,'sawtooth',.06-i*.01),i*80))}
 // ---- Voice ----
-let zhVoice=null,voiceSafety=null;
-function initVoice(){
-  if(typeof speechSynthesis==='undefined')return;
-  const pick=()=>{
-    const v=speechSynthesis.getVoices();if(!v.length)return;
-    zhVoice=v.find(v=>/zh/i.test(v.lang)&&/female|Mei|Ting|Sin|x-zh/.test(v.name))||v.find(v=>/zh/i.test(v.lang))||v.find(v=>v.lang.startsWith('cmn'))||null;
-  };pick();speechSynthesis.onvoiceschanged=pick;
+let zhV=null,vs=null;
+function iV(){if(typeof speechSynthesis==='undefined')return;const p=()=>{const v=speechSynthesis.getVoices();if(!v.length)return;zhV=v.find(x=>/zh/i.test(x.lang)&&/female|Mei|Ting|Sin|x-zh/.test(x.name))||v.find(x=>/zh/i.test(x.lang))||null};p();speechSynthesis.onvoiceschanged=p}
+function spk(t){if(!son()||typeof speechSynthesis==='undefined')return;if(!document.getElementById('voiceOn').checked)return;if(vs)clearTimeout(vs);speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='zh-CN';u.rate=.85;u.pitch=1.1;if(zhV)u.voice=zhV;vs=setTimeout(()=>{vs=null},8000);u.onend=()=>{if(vs){clearTimeout(vs);vs=null}};u.onerror=()=>{if(vs){clearTimeout(vs);vs=null}};try{speechSynthesis.speak(u)}catch(e){}}
+function sst(){if(typeof speechSynthesis!=='undefined')speechSynthesis.cancel();if(vs){clearTimeout(vs);vs=null}}
+// ---- Game ----
+const S={phase:'pick',slotA:'gs',slotB:'gg',picked:null,face:null,total:0,stw:0,stt:0,sww:0,swt:0,lsr:0};
+const $=i=>document.getElementById(i),$$=s=>document.querySelectorAll(s);
+const msg=$('msg'),bS=$('btnStick'),bW=$('btnSwitch'),bN=$('btnNext');
+const cA=$('coinA'),cB=$('coinB'),sA=$('slotA'),sB=$('slotB');
+const mM=$('sumModal');
+const $s=(id,fn)=>{const e=$(id);if(e)e.addEventListener('click',fn)};
+
+function rst(){
+  sst();S.picked=null;S.face=null;S.phase='pick';
+  bS.disabled=true;bW.disabled=true;bN.style.display='none';
+  [cA,cB].forEach(c=>{c.classList.remove('flip');c.querySelector('.coin-back').textContent='';c.classList.remove('done')});
+  [sA,sB].forEach(s=>{s.classList.remove('highlight','winner','loser','result')});
+  msg.innerHTML='点击一枚硬币翻开它 ✨';
+  if(S.total===0)spk('欢迎来到靓妹硬币游戏。点击一枚硬币。');
 }
-function speak(t){
-  if(!soundOn()||typeof speechSynthesis==='undefined')return;
-  if(!document.getElementById('voiceToggle').checked)return;
-  if(voiceSafety)clearTimeout(voiceSafety);
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(t);u.lang='zh-CN';u.rate=.85;u.pitch=1.1;
-  if(zhVoice)u.voice=zhVoice;
-  voiceSafety=setTimeout(()=>{voiceSafety=null},10000);
-  u.onend=()=>{if(voiceSafety){clearTimeout(voiceSafety);voiceSafety=null}};
-  u.onerror=()=>{if(voiceSafety){clearTimeout(voiceSafety);voiceSafety=null}};
-  try{speechSynthesis.speak(u)}catch(e){}
-}
-function stopSpeech(){if(typeof speechSynthesis!=='undefined')speechSynthesis.cancel();if(voiceSafety){clearTimeout(voiceSafety);voiceSafety=null}}
-// ---- State ----
-const state={
-  phase:'choose',pickedPurse:null,pickedFace:null,
-  total:0,stickWins:0,stickTotal:0,switchWins:0,switchTotal:0,lastSummaryRound:0,
-};
-const msg=document.getElementById('message');
-const btnStick=document.getElementById('btn-stick');
-const btnSwitch=document.getElementById('btn-switch');
-const btnNext=document.getElementById('btn-next');
-const modalOverlay=document.getElementById('summaryModal');
-const smStick=document.getElementById('smodal-stick');
-const smSwitch=document.getElementById('smodal-switch');
-const smStickD=document.getElementById('smodal-stick-detail');
-const smSwitchD=document.getElementById('smodal-switch-detail');
-const smConclusion=document.getElementById('smodal-conclusion');
-const smBadge=document.getElementById('summaryBadge');
-function qs(s){return document.querySelectorAll(s)}
-function setupCoins(){
-  qs('.coin').forEach(d=>{
-    d.addEventListener('click',()=>onCoinClick(d));
-    d.addEventListener('keydown',(e)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onCoinClick(d)}});
-  });
-}
-function resetCoins(){
-  qs('.coin').forEach(d=>{
-    d.classList.remove('selected','flip','gold','silver','gold-gold');
-    d.querySelector('.coin-back').textContent='';
-  });
-}
-function onCoinClick(el){
-  if(state.phase!=='choose')return;
-  if(el.classList.contains('disabled'))return;
-  state.phase='reveal';
-  state.pickedPurse=el.dataset.purse;
-  playCoinFlip();
-  el.classList.add('selected','flip');
-  // Determine face
-  const isGG=state.pickedPurse==='b';
-  if(isGG){
-    state.pickedFace='gold';
-    el.classList.add('gold-gold');
-    el.querySelector('.coin-back').textContent='金';
-  }else{
-    state.pickedFace=Math.random()<.5?'gold':'silver';
-    if(state.pickedFace==='gold'){
-      el.classList.add('gold');
-      el.querySelector('.coin-back').textContent='金';
-    }else{
-      el.classList.add('silver');
-      el.querySelector('.coin-back').textContent='银';
-    }
+function fin(revealBoth){
+  [cA,cB].forEach(c=>c.classList.add('done'));
+  [sA,sB].forEach(s=>s.classList.add('result'));
+  // Reveal both coins
+  if(revealBoth){
+    cA.querySelector('.coin-back').textContent='金/银';cA.classList.add('flip');
+    cB.querySelector('.coin-back').textContent='金/金';cB.classList.add('flip');
+    cA.querySelector('.coin-back').className='coin-face coin-back gs';
+    cB.querySelector('.coin-back').className='coin-face coin-back gg';
   }
-  qs('.coin').forEach(c=>c.classList.add('disabled'));
-  el.classList.remove('disabled');
-  if(state.pickedFace==='silver'){
-    // Silver - no choice
-    state.total++;
-    playLoseSound();
-    msg.innerHTML='😢 翻出 <span style="color:var(--silv);font-weight:700">银色面</span>，没有选择机会<br>只有金色面才能决定';
-    btnStick.disabled=true;btnSwitch.disabled=true;
-    btnNext.style.display='inline-block';
-    state.phase='result';
-    updateStats();
+}
+function clk(el){
+  if(S.phase!=='pick')return;
+  S.phase='flipped';
+  S.picked=el.id==='coinA'?'a':'b';
+  sFlip();
+  el.classList.add('flip');
+  if(S.picked==='a'){S.face=Math.random()<.5?'g':'s';
+    el.querySelector('.coin-back').textContent=S.face==='g'?'金':'银';
+    el.querySelector('.coin-back').className='coin-face coin-back '+(S.face==='g'?'gold':'silver');
+  }else{S.face='g';
+    el.querySelector('.coin-back').textContent='金';
+    el.querySelector('.coin-back').className='coin-face coin-back gold';
+  }
+  if(S.face==='s'){
+    sLose();S.total++;
+    // Silver - cant decide, auto reveal both and move on
+    setTimeout(()=>{
+      fin(true);
+      sA.classList.add('winner');cA.classList.add('done');
+      sB.classList.add('winner');cB.classList.add('done');
+      msg.innerHTML='😢 翻出 <b style="color:var(--silv)">银色面</b>，没有选择机会<br>只有金色面才能开启决策';
+      bN.style.display='inline-block';S.phase='done';
+      uS();cS();
+    },1200);
     return;
   }
-  // Gold revealed
-  btnStick.disabled=false;btnSwitch.disabled=false;
-  msg.innerHTML='看到 <span style="color:var(--gold);font-weight:700">金色面 ✨</span><br>要 <span class="highlight">坚持</span> 还是 <span class="highlight">换</span> 另一枚？';
-  speak(state.pickedPurse==='a'?'看到金色！金+银或金+金？':'看到金色！坚持还是换？');
+  // Gold revealed - show decision
+  setTimeout(()=>{
+    document.getElementById('slot'+S.picked.toUpperCase()).classList.add('highlight');
+    msg.innerHTML='✨ 翻出 <b style="color:var(--gold)">金色面</b>！<br>这枚硬币可能是金+金或金+银 · 坚持还是换？';
+    bS.disabled=false;bW.disabled=false;
+    S.phase='decide';
+    spk('看到金色。你手上的硬币可能是金加金可能是金加银。');
+  },900);
 }
-function decide(stick){
-  if(state.phase!=='reveal')return;
-  stopSpeech();
-  const isGG=state.pickedPurse==='b'; // purse b is always gg
-  const stickWin=stick?isGG:!isGG;
-  state.total++;
-  if(stick){state.stickTotal++;if(stickWin)state.stickWins++}
-  else{state.switchTotal++;if(stickWin)state.switchWins++}
-  // Reveal both purses
-  qs('.coin').forEach(c=>{
-    c.classList.add('flip');
-    if(c.dataset.purse==='a'){c.classList.add('gold','silver');c.querySelector('.coin-back').textContent='金/银';}
-    else{c.classList.add('gold-gold');c.querySelector('.coin-back').textContent='金/金';}
-    c.classList.add('disabled');
-  });
-  const emoji=stickWin?'🎉':'😢';
-  msg.innerHTML=emoji+' '+((stick?'坚持':'换币')+(stickWin?'，赢了！🥇':'...'));
-  if(stickWin)playWinJingle();else playLoseSound();
-  btnStick.disabled=true;btnSwitch.disabled=true;
-  btnNext.style.display='inline-block';
-  state.phase='result';
-  updateStats();checkSummary();
+function dcd(stick){
+  if(S.phase!=='decide')return;sst();
+  const isGG=S.picked==='b'; // purse b=gg
+  const win=stick?isGG:!isGG;
+  S.total++;
+  if(stick){S.stt++;if(win)S.stw++}else{S.swt++;if(win)S.sww++}
+  // Reveal both coins with result
+  fin(true);
+  // Mark result
+  const pickSlot=$('slot'+S.picked.toUpperCase());
+  const otherSlot=S.picked==='a'?sB:sA;
+  if(win){pickSlot.classList.add('winner');pickSlot.classList.remove('highlight');otherSlot.classList.add('loser')}
+  else{otherSlot.classList.add('winner');pickSlot.classList.add('loser');pickSlot.classList.remove('highlight')}
+  msg.innerHTML=(win?'🎉 ':'😢 ')+(stick?'坚持':'换币')+(win?'，赢得 <b style="color:var(--grn)">金+金</b> ！':'，这枚是金+银...');
+  if(win)sWin();else sLose();
+  bS.disabled=true;bW.disabled=true;bN.style.display='inline-block';
+  S.phase='done';uS();cS();
 }
-function updateStats(){
-  document.getElementById('v-round').textContent=state.total;
-  const sp=state.stickTotal>0?Math.round(state.stickWins/state.stickTotal*100):0;
-  const sw=state.switchTotal>0?Math.round(state.switchWins/state.switchTotal*100):0;
-  document.getElementById('v-stick-pct').textContent=sp+'%';
-  document.getElementById('v-switch-pct').textContent=sw+'%';
-  document.getElementById('v-stick-detail').textContent=state.stickWins+'/'+state.stickTotal;
-  document.getElementById('v-switch-detail').textContent=state.switchWins+'/'+state.switchTotal;
+function uS(){
+  $('stickPct').textContent=(S.stt>0?Math.round(S.stw/S.stt*100):0)+'%';
+  $('switchPct').textContent=(S.swt>0?Math.round(S.sww/S.swt*100):0)+'%';
+  $('stickDet').textContent=S.stw+'/'+S.stt;
+  $('switchDet').textContent=S.sww+'/'+S.swt;
+  $('totalR').textContent=S.total;
 }
-function checkSummary(){
-  if(state.total>0&&state.total%20===0&&state.total!==state.lastSummaryRound){
-    state.lastSummaryRound=state.total;showSummary();
-  }
+function cS(){
+  if(S.total>0&&S.total%20===0&&S.total!==S.lsr){S.lsr=S.total;sShow()}
 }
-function showSummary(){
-  const sp=state.stickTotal>0?Math.round(state.stickWins/state.stickTotal*100):0;
-  const sw=state.switchTotal>0?Math.round(state.switchWins/state.switchTotal*100):0;
-  smBadge.textContent='📊 第 '+state.total+' 局小结';
-  smStick.textContent=sp+'%';smSwitch.textContent=sw+'%';
-  smStickD.textContent=state.stickWins+'/'+state.stickTotal;
-  smSwitchD.textContent=state.switchWins+'/'+state.switchTotal;
-  let conclusion='';
-  if(state.total>=40){
-    if(sp-sw>=10)conclusion='数据印证理论 🧠<br>坚持 (<strong>'+sp+'%</strong>) > 换币 (<strong>'+sw+'%</strong>)<br>看到金色：金+金有 2 面金，金+银仅 1 面 → 坚持胜率 2/3！';
-    else conclusion='坚持 <strong>'+sp+'%</strong>，换币 <strong>'+sw+'%</strong><br>继续实验会趋近 66.7% vs 33.3%';
-  }else{
-    conclusion='坚持 <strong>'+sp+'%</strong>，换币 <strong>'+sw+'%</strong><br>随着次数增加，坚持将趋近 <strong>66.7%</strong>（2/3），换币只有 33.3%（1/3）';
-  }
-  smConclusion.innerHTML=conclusion;
-  modalOverlay.classList.add('show');
-  playSummaryChime();
-}
-function initRound(){
-  stopSpeech();
-  state.pickedPurse=null;state.pickedFace=null;
-  state.phase='choose';
-  btnStick.disabled=true;btnSwitch.disabled=true;btnNext.style.display='none';
-  resetCoins();
-  qs('.coin').forEach(c=>c.classList.remove('disabled'));
-  msg.innerHTML='两枚硬币：一枚 <strong>金+银</strong>，一枚 <strong>金+金</strong><br>随机摸一枚，翻出一面<br>👆 点击口袋中的硬币';
-  if(state.total===0)speak('欢迎来到靓妹硬币。两枚硬币，看到金色面后可以选择坚持或换。');
-  else speak('新的一局。');
+function sShow(){
+  const sp=S.stt>0?Math.round(S.stw/S.stt*100):0;
+  const sw=S.swt>0?Math.round(S.sww/S.swt*100):0;
+  $('sumTag').textContent='第 '+S.total+' 局';
+  $('sumStick').textContent=sp+'%';$('sumSwitch').textContent=sw+'%';
+  let t='';
+  if(S.total>=60&&sp>=50)t='数据清晰印证理论 🧠<br>坚持 <b style="color:var(--gold)">'+sp+'%</b>，换币 <b style="color:var(--grn)">'+sw+'%</b><br>金+金有 2 面金 → 坚持胜率 2/3！';
+  else if(S.total>=40)t='坚持 <b style="color:var(--gold)">'+sp+'%</b> vs 换币 <b style="color:var(--grn)">'+sw+'%</b><br>趋势已现：坚持趋近 66.7%（2/3）';
+  else t='目前坚持 <b style="color:var(--gold)">'+sp+'%</b> · 换币 <b style="color:var(--grn)">'+sw+'%</b><br>随着局数增加，坚持将趋近 <b>66.7%</b>，换币仅 <b>33.3%</b>';
+  $('sumConc').innerHTML=t;
+  mM.classList.add('show');
 }
 // ---- Events ----
-document.getElementById('btn-stick').addEventListener('click',()=>decide(true));
-document.getElementById('btn-switch').addEventListener('click',()=>decide(false));
-document.getElementById('btn-next').addEventListener('click',initRound);
-document.getElementById('btnHelp').addEventListener('click',()=>{document.getElementById('helpModal').style.display='flex'});
-document.getElementById('btnCloseHelp').addEventListener('click',()=>{document.getElementById('helpModal').style.display='none'});
-document.getElementById('helpModal').addEventListener('click',(e)=>{if(e.target===e.currentTarget)e.currentTarget.style.display='none'});
-document.getElementById('btnCloseModal').addEventListener('click',()=>{modalOverlay.classList.remove('show');if(state.phase==='result')speak('点击下一局。');});
-modalOverlay.addEventListener('click',(e)=>{if(e.target===e.currentTarget)modalOverlay.classList.remove('show')});
-document.getElementById('soundToggle').addEventListener('change',()=>{if(!soundOn()){try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close()}catch(e){}audioCtx=null}});
-document.getElementById('voiceToggle').addEventListener('change',()=>{if(!document.getElementById('voiceToggle').checked)stopSpeech()});
-document.addEventListener('keydown',(e)=>{if((e.key==='Enter'||e.key===' ')&&state.phase==='result'&&getComputedStyle(btnNext).display!=='none'&&!btnNext.disabled){e.preventDefault();initRound()}});
-setupCoins();
-initVoice();
-initRound();
+cA.addEventListener('click',()=>clk(cA));
+cB.addEventListener('click',()=>clk(cB));
+cA.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();clk(cA)}});
+cB.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();clk(cB)}});
+$s('btnStick',()=>dcd(true));
+$s('btnSwitch',()=>dcd(false));
+$s('btnNext',()=>rst());
+$s('helpBtn',()=>{$('helpModal').style.display='flex'});
+$s('closeHelp',()=>{$('helpModal').style.display='none'});
+$('helpModal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.style.display='none'});
+$s('closeSum',()=>{mM.classList.remove('show');if(S.phase==='done')spk('点击下一局继续。')});
+mM.addEventListener('click',e=>{if(e.target===e.currentTarget)mM.classList.remove('show')});
+$('soundOn').addEventListener('change',()=>{if(!son()){try{if(actx&&actx.state!=='closed')actx.close()}catch(e){}actx=null}});
+$('voiceOn').addEventListener('change',()=>{if(!$('voiceOn').checked)sst()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&S.phase==='done'&&getComputedStyle(bN).display!=='none'){e.preventDefault();rst()}});
+iV();rst();
 </script>
 </body>
 </html>
